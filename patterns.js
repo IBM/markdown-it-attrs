@@ -13,8 +13,8 @@ module.exports = options => {
 
   return ([
     /**
-     * {ald1 #id1 .class1 attr1="value1"}
-     * {ald2 #id2 .class2 attr2="value2"}
+     * {:ald1: #id1 .class1 attr1="value1"}
+     * {:ald2: #id2 .class2 attr2="value2"}
      * ...
      * 
     */
@@ -273,6 +273,35 @@ module.exports = options => {
         let trimmed = content.slice(0, content.lastIndexOf(options.leftDelimiter));
         token.content = last(trimmed) !== ' ' ?
           trimmed : trimmed.slice(0, -1);
+      }
+    }, {
+      /**
+       * - start of {.list-item}
+       */
+      name: 'list item start',
+      tests: [
+        {
+          shift: -2,
+          type: 'list_item_open'
+        }, {
+          shift: 0,
+          type: 'inline',
+          children: [
+            {
+              position: -1,
+              type: 'text',
+              content: utils.hasDelimiters('start', options)
+            }
+          ]
+        }
+      ],
+      transform: (tokens, i, j) => {
+        let token = tokens[i].children[j];
+        let content = token.content;
+        let attrs = utils.getAttrs(content, content.indexOf(options.leftDelimiter), options);
+        utils.addAttrs(attrs, tokens[i - 2]);
+        let trimmed = content.slice(content.indexOf(options.rightDelimiter) + 1);
+        token.content = trimmed.replace(/^\s*/, "");
       }
     }, {
       /**
