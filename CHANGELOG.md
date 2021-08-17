@@ -2,6 +2,10 @@
 
 This project uses [semantic versioning](http://semver.org/).
 
+## [4.0.0-3] 2021-08-17
+- add a custom tweaked definition of "softbreak then curly in start" to support paragraphs within list items
+- resurrect support for specifying attributes for list items at the front of the list item text
+
 ## [4.0.0-2] 2021-08-11
 - revert support for specifying attributes for list items at the front of the list item text
 

@@ -13,13 +13,14 @@ module.exports = options => {
 
   return ([
     /**
-     * {ald1 #id1 .class1 attr1="value1"}
-     * {ald2 #id2 .class2 attr2="value2"}
-     * ...
+     * (marked-it fork)
      * 
-    */
+     * {:ald1: #id1 .class1 attr1="value1"}
+     * {:ald2: #id2 .class2 attr2="value2"}
+     * ...
+     */
     {
-      name: 'attribute list definitions',
+      name: 'attribute list definitions (marked-it fork)',
       tests: [
         { 
           shift: 0,
@@ -273,6 +274,71 @@ module.exports = options => {
         let trimmed = content.slice(0, content.lastIndexOf(options.leftDelimiter));
         token.content = last(trimmed) !== ' ' ?
           trimmed : trimmed.slice(0, -1);
+      }
+    }, {
+      /**
+       * (marked-it fork)
+       *
+       * - start of {.list-item} (marked-it fork)
+       */
+      name: 'list item start',
+      tests: [
+        {
+          shift: -2,
+          type: 'list_item_open'
+        }, {
+          shift: 0,
+          type: 'inline',
+          children: [
+            {
+              position: -1,
+              type: 'text',
+              content: utils.hasDelimiters('start', options)
+            }
+          ]
+        }
+      ],
+      transform: (tokens, i, j) => {
+        let token = tokens[i].children[j];
+        let content = token.content;
+        let attrs = utils.getAttrs(content, content.indexOf(options.leftDelimiter), options);
+        utils.addAttrs(attrs, tokens[i - 2]);
+        let trimmed = content.slice(content.indexOf(options.rightDelimiter) + 1);
+        token.content = trimmed.replace(/^\s*/, '');
+      }
+    }, {
+      /**
+       * (marked-it fork)
+       * 
+       * something with softbreak
+       * {.cls}
+       */
+      name: '\n{.a} softbreak then curly in start (marked-it fork)',
+      tests: [
+        {
+          shift: 0,
+          type: 'inline',
+          children: [
+            {
+              position: -2,
+              type: 'softbreak'
+            }, {
+              position: -1,
+              type: 'text',
+              content: utils.hasDelimiters('only', options)
+            }
+          ]
+        }
+      ],
+      transform: (tokens, i, j) => {
+        let token = tokens[i].children[j];
+        let attrs = utils.getAttrs(token.content, 0, options);
+        // find last closing tag
+        let ii = i + 1;
+        while (tokens[ii + 1] && (tokens[ii].type !== "paragraph_close" && tokens[ii + 1].nesting === -1)) { ii++; }
+        let openingToken = utils.getMatchingOpeningToken(tokens, ii);
+        utils.addAttrs(attrs, openingToken);
+        tokens[i].children = tokens[i].children.slice(0, -2);
       }
     }, {
       /**
