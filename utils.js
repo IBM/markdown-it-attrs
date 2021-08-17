@@ -217,7 +217,8 @@ exports.hasDelimiters = function (where, options) {
     case 'end':
       // last char should be }
       start = str.lastIndexOf(options.leftDelimiter);
-      end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, start + rightDelimiterMinimumShift);
+      //end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, start + rightDelimiterMinimumShift);
+      end = start === -1 ? -1 : str.lastIndexOf(options.rightDelimiter); // marked-it fork
       end = end === str.length - options.rightDelimiter.length ? end : -1;
       break;
 

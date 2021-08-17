@@ -2,6 +2,9 @@
 
 This project uses [semantic versioning](http://semver.org/).
 
+## [4.0.0-4] 2021-08-17
+- tweak utils.hasDelimiters() to not fail if an 'end' string contains a closing delimiter within its content
+
 ## [4.0.0-3] 2021-08-17
 - add a custom tweaked definition of "softbreak then curly in start" to support paragraphs within list items
 - resurrect support for specifying attributes for list items at the front of the list item text
