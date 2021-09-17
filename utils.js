@@ -157,7 +157,8 @@ exports.addAttrs = function (attrs, token) {
         exports.addAttrs(attributeListDefintions.get(attrs[j][1]), token);
       }
     } else {
-      token.attrPush(attrs[j]);
+      // token.attrPush(attrs[j]);
+      token.attrJoin(attrs[j][0], attrs[j][1]); // marked-it fork
     }
   }
   return token;
