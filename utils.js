@@ -152,12 +152,13 @@ exports.addAttrs = function (attrs, token) {
       token.attrJoin('class', attrs[j][1]);
     } else if (key === 'css-module') {
       token.attrJoin('css-module', attrs[j][1]);
-    } else if (key === 'attributeListReference') { 
+    } else if (key === 'attributeListReference') {
       if (attributeListDefintions.has(attrs[j][1])) {
         exports.addAttrs(attributeListDefintions.get(attrs[j][1]), token);
       }
-    } else {
-      // token.attrPush(attrs[j]);
+    } else if (key === 'id') { // marked-it fork
+      token.attrPush(attrs[j]);
+    } else { // marked-it fork
       token.attrJoin(attrs[j][0], attrs[j][1]); // marked-it fork
     }
   }
