@@ -2,7 +2,7 @@
 
 This project uses [semantic versioning](http://semver.org/).
 
-## [4.0.0-5] 2021-09-17
+## [4.0.0-5 and 4.0.0-6] 2021-09-17
 - tweaked utils.addAttrs() to join identically-named attributes on an element instead of only adopting one of their values
 
 ## [4.0.0-4] 2021-08-17
