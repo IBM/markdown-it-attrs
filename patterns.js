@@ -279,6 +279,53 @@ module.exports = options => {
       /**
        * (marked-it fork)
        *
+       * - end of {.tasklist-item}
+       */
+      name: 'tasklist item end',
+      tests: [
+        {
+          shift: -2,
+          type: 'list_item_open'
+        }, {
+          shift: 0,
+          type: 'inline',
+          children: [
+            {
+              position: 0,
+              type: 'html_inline',
+              content: function(content) {return content === "<label>"}
+            },
+            {
+              position: 1,
+              type: 'html_inline',
+              content: function(content) {return content.indexOf('type="checkbox"') !== -1}
+            },
+            {
+              position: -1,
+              type: 'html_inline',
+              content: function(content) {return content === "</label>"}
+            },
+            {
+              position: -2,
+              type: 'text',
+              content: utils.hasDelimiters('end', options)
+            }
+          ]
+        }
+      ],
+      transform: (tokens, i, j) => {
+        let token = tokens[i].children[j];
+        let content = token.content;
+        let attrs = utils.getAttrs(content, content.lastIndexOf(options.leftDelimiter), options);
+        utils.addAttrs(attrs, tokens[i - 2]);
+        let trimmed = content.slice(0, content.lastIndexOf(options.leftDelimiter));
+        token.content = last(trimmed) !== ' ' ?
+          trimmed : trimmed.slice(0, -1);
+      }
+    }, {
+      /**
+       * (marked-it fork)
+       *
        * - start of {.list-item} (marked-it fork)
        */
       name: 'list item start',
