@@ -1,20 +1,16 @@
 {
-  "name": "markdown-it-attrs",
-  "version": "4.0.0-7",
+  "name": "@marked-it/markdown-it-attrs",
+  "version": "4.0.0-8",
   "description": "Add classes, identifiers and attributes to your markdown with {} curly brackets, similar to pandoc's header attributes",
   "main": "index.js",
   "license": "MIT",
-  "repository": "IBM/markdown-it-attrs",
-  "author": {
-    "name": "Arve Seljebu",
-    "email": "arve.seljebu@gmail.com",
-    "url": "https://arve0.github.io"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IBM/markdown-it-attrs.git"
   },
+  "author": "Arve Seljebu <arve.seljebu@gmail.com> (https://arve0.github.io)",
   "contributors": [
-    {
-      "name": "Grant Gayed",
-      "email": "grant_gayed@ca.ibm.com"
-    }
+    "Grant Gayed <grant_gayed@ca.ibm.com>"
   ],
   "engines": {
     "node": ">=6"
@@ -41,7 +37,6 @@
     "pandoc",
     "header_attributes"
   ],
-  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.4.3",
     "@babel/preset-env": "^7.4.3",
@@ -57,5 +52,8 @@
   "peerDependencies": {
     "markdown-it": ">= 9.0.0 < 13.0.0"
   },
-  "tonicExampleFilename": "demo.js"
+  "tonicExampleFilename": "demo.js",
+  "bugs": {
+    "url": "https://github.com/IBM/markdown-it-attrs/issues"
+  }
 }
