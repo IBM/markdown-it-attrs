@@ -222,6 +222,10 @@ exports.hasDelimiters = function (where, options) {
       //end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, start + rightDelimiterMinimumShift);
       end = start === -1 ? -1 : str.lastIndexOf(options.rightDelimiter); // marked-it fork
       end = end === str.length - options.rightDelimiter.length ? end : -1;
+      // reject if there is a doubled closing delimiter (e.g. "{{attr}}" has "}}" at end)
+      if (end > 0 && str[end - options.rightDelimiter.length] === options.rightDelimiter[options.rightDelimiter.length - 1]) {
+        end = -1;
+      }
       break;
 
     case 'only':

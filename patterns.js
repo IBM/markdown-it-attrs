@@ -293,17 +293,17 @@ module.exports = options => {
             {
               position: 0,
               type: 'html_inline',
-              content: function(content) {return content === "<label>"}
+              content: function(content) {return content === '<label>';}
             },
             {
               position: 1,
               type: 'html_inline',
-              content: function(content) {return content.indexOf('type="checkbox"') !== -1}
+              content: function(content) {return content.indexOf('type="checkbox"') !== -1;}
             },
             {
               position: -1,
               type: 'html_inline',
-              content: function(content) {return content === "</label>"}
+              content: function(content) {return content === '</label>';}
             },
             {
               position: -2,
@@ -352,40 +352,6 @@ module.exports = options => {
         utils.addAttrs(attrs, tokens[i - 2]);
         let trimmed = content.slice(content.indexOf(options.rightDelimiter) + 1);
         token.content = trimmed.replace(/^\s*/, '');
-      }
-    }, {
-      /**
-       * (marked-it fork)
-       * 
-       * something with softbreak
-       * {.cls}
-       */
-      name: '\n{.a} softbreak then curly in start (marked-it fork)',
-      tests: [
-        {
-          shift: 0,
-          type: 'inline',
-          children: [
-            {
-              position: -2,
-              type: 'softbreak'
-            }, {
-              position: -1,
-              type: 'text',
-              content: utils.hasDelimiters('only', options)
-            }
-          ]
-        }
-      ],
-      transform: (tokens, i, j) => {
-        let token = tokens[i].children[j];
-        let attrs = utils.getAttrs(token.content, 0, options);
-        // find last closing tag
-        let ii = i + 1;
-        while (tokens[ii + 1] && (tokens[ii].type !== "paragraph_close" && tokens[ii + 1].nesting === -1)) { ii++; }
-        let openingToken = utils.getMatchingOpeningToken(tokens, ii);
-        utils.addAttrs(attrs, openingToken);
-        tokens[i].children = tokens[i].children.slice(0, -2);
       }
     }, {
       /**
