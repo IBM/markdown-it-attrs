@@ -2,6 +2,10 @@
 
 This project uses [semantic versioning](http://semver.org/).
 
+## [4.0.2] 2026-10-16
+- fixed regression in 4.0.1 where an attribute on its own line after a paragraph inside a list item (`Some text.\n{.a}`) was applied to the `<li>` instead of the `<p>`; the "softbreak then curly in start" pattern lost this handling in 4.0.0-9
+- added tests for attributes on paragraphs within loose list items and for trailing attributes on tight ordered lists
+
 ## [4.0.1] 2026-10-16
 - updated dev dependencies (`shell-quote`, `pbkdf2`)
 

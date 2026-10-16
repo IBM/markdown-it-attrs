@@ -234,6 +234,20 @@ function describeTestsWithOptions(options, postText) {
       expected += '</ul>\n';
       assert.equal(md.render(src), expected);
     });
+    it(replaceDelimiters('should add attributes to paragraph, not list item, after a "softbreak" in a loose list item', options), () => {
+      src = '1. Step one.\n\n   Some paragraph text.\n   {.note}\n\n2. Step two.\n';
+      expected = '<ol>\n<li>\n<p>Step one.</p>\n<p class="note">Some paragraph text.</p>\n</li>\n';
+      expected += '<li>\n<p>Step two.</p>\n</li>\n</ol>\n';
+      assert.equal(md.render(replaceDelimiters(src, options)), expected);
+    });
+
+    it(replaceDelimiters('should add attributes to ol after a "softbreak" in a tight ordered list', options), () => {
+      src = '1. Step one.\n   {.note}\n2. Step two.\n';
+      expected = '<ol class="note">\n<li>Step one.</li>\n<li>Step two.</li>\n</ol>\n';
+      assert.equal(md.render(replaceDelimiters(src, options)), expected);
+    });
+
+
 
     it(replaceDelimiters('should work with ordered lists', options), () => {
       src = '1. item\n{.blue}';
