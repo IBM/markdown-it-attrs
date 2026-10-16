@@ -380,7 +380,10 @@ module.exports = options => {
         let attrs = utils.getAttrs(token.content, 0, options);
         // find last closing tag
         let ii = i + 1;
-        while (tokens[ii + 1] && tokens[ii + 1].nesting === -1) { ii++; }
+        // stop at a visible paragraph inside a list item, so that a loose list
+        // item's paragraph gets the attributes instead of the list item
+        while (tokens[ii + 1] && tokens[ii + 1].nesting === -1 &&
+          !(tokens[ii].type === 'paragraph_close' && !tokens[ii].hidden && tokens[ii + 1].type === 'list_item_close')) { ii++; }
         let openingToken = utils.getMatchingOpeningToken(tokens, ii);
         utils.addAttrs(attrs, openingToken);
         tokens[i].children = tokens[i].children.slice(0, -2);
