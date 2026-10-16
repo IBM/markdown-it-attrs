@@ -2,7 +2,7 @@
 
 This project uses [semantic versioning](http://semver.org/).
 
-## [4.0.0-10] 2026-10-16
+## [4.0.1] 2026-10-16
 - updated dev dependencies (`shell-quote`, `pbkdf2`)
 
 ## [4.0.0-9] 2026-09-25
