@@ -1,57 +1,53 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.markdownItAttrs = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 'use strict';
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var patternsConfig = require('./patterns.js');
-
+var utils = require('./utils.js');
 var defaultOptions = {
   leftDelimiter: '{',
   rightDelimiter: '}',
   allowedAttributes: []
 };
-
 module.exports = function attributes(md, options_) {
   var options = Object.assign({}, defaultOptions);
   options = Object.assign(options, options_);
   var patterns = patternsConfig(options);
-
   function curlyAttrs(state) {
     var tokens = state.tokens;
-
+    // clean ALDs for each document
+    utils.attributeListDefintions.clear();
     var _loop = function _loop(i) {
-      for (var p = 0; p < patterns.length; p++) {
-        var pattern = patterns[p];
+      var _loop2 = function _loop2(_p) {
+        var pattern = patterns[_p];
         var j = null; // position of child with offset 0
-
         var match = pattern.tests.every(function (t) {
           var res = test(tokens, i, t);
-
           if (res.j !== null) {
             j = res.j;
           }
-
           return res.match;
         });
-
         if (match) {
           pattern.transform(tokens, i, j);
-
           if (pattern.name === 'inline attributes' || pattern.name === 'inline nesting 0') {
             // retry, may be several inline attributes
-            p--;
+            _p--;
           }
         }
+        p = _p;
+      };
+      for (var p = 0; p < patterns.length; p++) {
+        _loop2(p);
       }
     };
-
     for (var i = 0; i < tokens.length; i++) {
       _loop(i);
     }
   }
-
   md.core.ruler.before('linkify', 'curly_attributes', curlyAttrs);
 };
+
 /**
  * Test if t matches token stream.
  *
@@ -60,13 +56,10 @@ module.exports = function attributes(md, options_) {
  * @param {object} t Test to match.
  * @return {object} { match: true|false, j: null|number }
  */
-
-
 function test(tokens, i, t) {
   var res = {
     match: false,
     j: null // position of child
-
   };
   var ii = t.shift !== undefined ? i + t.shift : t.position;
   var token = get(tokens, ii); // supports negative ii
@@ -74,32 +67,24 @@ function test(tokens, i, t) {
   if (token === undefined) {
     return res;
   }
-
-  var _loop2 = function _loop2(key) {
-    if (key === 'shift' || key === 'position') {
-      return "continue";
-    }
-
-    if (token[key] === undefined) {
-      return {
-        v: res
-      };
-    }
-
-    if (key === 'children' && isArrayOfObjects(t.children)) {
-      var _ret2 = function () {
+  var _loop3 = function _loop3(key) {
+      if (key === 'shift' || key === 'position') {
+        return 0; // continue
+      }
+      if (token[key] === undefined) {
+        return {
+          v: res
+        };
+      }
+      if (key === 'children' && isArrayOfObjects(t.children)) {
         if (token.children.length === 0) {
           return {
-            v: {
-              v: res
-            }
+            v: res
           };
         }
-
         var match;
         var childTests = t.children;
         var children = token.children;
-
         if (childTests.every(function (tt) {
           return tt.position !== undefined;
         })) {
@@ -107,149 +92,161 @@ function test(tokens, i, t) {
           match = childTests.every(function (tt) {
             return test(children, tt.position, tt).match;
           });
-
           if (match) {
             // we may need position of child in transform
             var j = last(childTests).position;
             res.j = j >= 0 ? j : children.length + j;
           }
         } else {
-          var _loop3 = function _loop3(_j) {
+          var _loop4 = function _loop4(_j) {
             match = childTests.every(function (tt) {
               return test(children, _j, tt).match;
             });
-
             if (match) {
-              res.j = _j; // all tests true, continue with next key of pattern t
-
-              return "break";
+              res.j = _j;
+              // all tests true, continue with next key of pattern t
+              return 1; // break
             }
           };
-
           for (var _j = 0; _j < children.length; _j++) {
-            var _ret3 = _loop3(_j);
-
-            if (_ret3 === "break") break;
+            if (_loop4(_j)) break;
           }
         }
-
         if (match === false) {
           return {
-            v: {
-              v: res
-            }
-          };
-        }
-
-        return {
-          v: "continue"
-        };
-      }();
-
-      if (_typeof(_ret2) === "object") return _ret2.v;
-    }
-
-    switch (_typeof(t[key])) {
-      case 'boolean':
-      case 'number':
-      case 'string':
-        if (token[key] !== t[key]) {
-          return {
             v: res
           };
         }
-
-        break;
-
-      case 'function':
-        if (!t[key](token[key])) {
-          return {
-            v: res
-          };
-        }
-
-        break;
-
-      case 'object':
-        if (isArrayOfFunctions(t[key])) {
-          var r = t[key].every(function (tt) {
-            return tt(token[key]);
-          });
-
-          if (r === false) {
+        return 0; // continue
+      }
+      switch (_typeof(t[key])) {
+        case 'boolean':
+        case 'number':
+        case 'string':
+          if (token[key] !== t[key]) {
             return {
               v: res
             };
           }
-
           break;
-        }
-
-      // fall through for objects !== arrays of functions
-
-      default:
-        throw new Error("Unknown type of pattern test (key: ".concat(key, "). Test should be of type boolean, number, string, function or array of functions."));
-    }
-  };
-
+        case 'function':
+          if (!t[key](token[key])) {
+            return {
+              v: res
+            };
+          }
+          break;
+        case 'object':
+          if (isArrayOfFunctions(t[key])) {
+            var r = t[key].every(function (tt) {
+              return tt(token[key]);
+            });
+            if (r === false) {
+              return {
+                v: res
+              };
+            }
+            break;
+          }
+        // fall through for objects !== arrays of functions
+        default:
+          throw new Error("Unknown type of pattern test (key: ".concat(key, "). Test should be of type boolean, number, string, function or array of functions."));
+      }
+    },
+    _ret;
   for (var key in t) {
-    var _ret = _loop2(key);
+    _ret = _loop3(key);
+    if (_ret === 0) continue;
+    if (_ret) return _ret.v;
+  }
 
-    switch (_ret) {
-      case "continue":
-        continue;
-
-      default:
-        if (_typeof(_ret) === "object") return _ret.v;
-    }
-  } // no tests returned false -> all tests returns true
-
-
+  // no tests returned false -> all tests returns true
   res.match = true;
   return res;
 }
-
 function isArrayOfObjects(arr) {
   return Array.isArray(arr) && arr.length && arr.every(function (i) {
     return _typeof(i) === 'object';
   });
 }
-
 function isArrayOfFunctions(arr) {
   return Array.isArray(arr) && arr.length && arr.every(function (i) {
     return typeof i === 'function';
   });
 }
+
 /**
  * Get n item of array. Supports negative n, where -1 is last
  * element in array.
  * @param {array} arr
  * @param {number} n
  */
-
-
 function get(arr, n) {
   return n >= 0 ? arr[n] : arr[arr.length + n];
-} // get last element of array, safe - returns {} if not found
+}
 
-
+// get last element of array, safe - returns {} if not found
 function last(arr) {
   return arr.slice(-1)[0] || {};
 }
 
-},{"./patterns.js":2}],2:[function(require,module,exports){
+},{"./patterns.js":2,"./utils.js":3}],2:[function(require,module,exports){
 'use strict';
+
 /**
  * If a pattern matches the token stream,
  * then run transform.
  */
-
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 var utils = require('./utils.js');
-
 module.exports = function (options) {
   var __hr = new RegExp('^ {0,3}[-*_]{3,} ?' + utils.escapeRegExp(options.leftDelimiter) + '[^' + utils.escapeRegExp(options.rightDelimiter) + ']');
-
-  return [{
+  return [
+  /**
+   * (marked-it fork)
+   * 
+   * {:ald1: #id1 .class1 attr1="value1"}
+   * {:ald2: #id2 .class2 attr2="value2"}
+   * ...
+   */
+  {
+    name: 'attribute list definitions (marked-it fork)',
+    tests: [{
+      shift: 0,
+      block: true,
+      content: utils.hasDelimiters('only', options)
+    }],
+    transform: function transform(tokens, i) {
+      var token = tokens[i];
+      var hasDelimiters = utils.hasDelimiters('only', options);
+      var hasAlds = false;
+      var _iterator = _createForOfIteratorHelper(token.children),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var child = _step.value;
+          if (child.type === 'text' && hasDelimiters(child.content)) {
+            var childStart = child.content.lastIndexOf(options.leftDelimiter);
+            var attrs = utils.getAttrs(child.content, childStart, options);
+            if (attrs.length && attrs[0][0] === 'attributeListDefinition') {
+              utils.attributeListDefintions.set(attrs[0][1], attrs.slice(1));
+              hasAlds = true;
+            }
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      if (hasAlds) {
+        // remove surrounding paragraph
+        tokens.splice(i - 1, 3);
+      }
+    }
+  }, {
     /**
      * ```python {.cls}
      * for i in range(10):
@@ -297,7 +294,6 @@ module.exports = function (options) {
       var attrToken = tokens[i].children[j - 1];
       var attrs = utils.getAttrs(token.content, 0, options);
       utils.addAttrs(attrs, attrToken);
-
       if (token.content.length === endChar + options.rightDelimiter.length) {
         tokens[i].children.splice(j, 1);
       } else {
@@ -329,10 +325,10 @@ module.exports = function (options) {
     transform: function transform(tokens, i) {
       var token = tokens[i + 2];
       var tableOpen = utils.getMatchingOpeningToken(tokens, i);
-      var attrs = utils.getAttrs(token.content, 0, options); // add attributes
-
-      utils.addAttrs(attrs, tableOpen); // remove <p>{.c}</p>
-
+      var attrs = utils.getAttrs(token.content, 0, options);
+      // add attributes
+      utils.addAttrs(attrs, tableOpen);
+      // remove <p>{.c}</p>
       tokens.splice(i + 1, 3);
     }
   }, {
@@ -346,7 +342,6 @@ module.exports = function (options) {
       children: [{
         shift: -1,
         nesting: -1 // closing inline tag, </em>{.a}
-
       }, {
         shift: 0,
         type: 'text',
@@ -387,11 +382,9 @@ module.exports = function (options) {
       var content = token.content;
       var attrs = utils.getAttrs(content, 0, options);
       var ii = i - 2;
-
       while (tokens[ii - 1] && tokens[ii - 1].type !== 'ordered_list_open' && tokens[ii - 1].type !== 'bullet_list_open') {
         ii--;
       }
-
       utils.addAttrs(attrs, tokens[ii - 1]);
       tokens[i].children = tokens[i].children.slice(0, -2);
     }
@@ -460,6 +453,78 @@ module.exports = function (options) {
     }
   }, {
     /**
+     * (marked-it fork)
+     *
+     * - end of {.tasklist-item}
+     */
+    name: 'tasklist item end',
+    tests: [{
+      shift: -2,
+      type: 'list_item_open'
+    }, {
+      shift: 0,
+      type: 'inline',
+      children: [{
+        position: 0,
+        type: 'html_inline',
+        content: function content(_content) {
+          return _content === '<label>';
+        }
+      }, {
+        position: 1,
+        type: 'html_inline',
+        content: function content(_content2) {
+          return _content2.indexOf('type="checkbox"') !== -1;
+        }
+      }, {
+        position: -1,
+        type: 'html_inline',
+        content: function content(_content3) {
+          return _content3 === '</label>';
+        }
+      }, {
+        position: -2,
+        type: 'text',
+        content: utils.hasDelimiters('end', options)
+      }]
+    }],
+    transform: function transform(tokens, i, j) {
+      var token = tokens[i].children[j];
+      var content = token.content;
+      var attrs = utils.getAttrs(content, content.lastIndexOf(options.leftDelimiter), options);
+      utils.addAttrs(attrs, tokens[i - 2]);
+      var trimmed = content.slice(0, content.lastIndexOf(options.leftDelimiter));
+      token.content = last(trimmed) !== ' ' ? trimmed : trimmed.slice(0, -1);
+    }
+  }, {
+    /**
+     * (marked-it fork)
+     *
+     * - start of {.list-item} (marked-it fork)
+     */
+    name: 'list item start',
+    tests: [{
+      shift: -2,
+      type: 'list_item_open'
+    }, {
+      shift: 0,
+      type: 'inline',
+      children: [{
+        position: -1,
+        type: 'text',
+        content: utils.hasDelimiters('start', options)
+      }]
+    }],
+    transform: function transform(tokens, i, j) {
+      var token = tokens[i].children[j];
+      var content = token.content;
+      var attrs = utils.getAttrs(content, content.indexOf(options.leftDelimiter), options);
+      utils.addAttrs(attrs, tokens[i - 2]);
+      var trimmed = content.slice(content.indexOf(options.rightDelimiter) + 1);
+      token.content = trimmed.replace(/^\s*/, '');
+    }
+  }, {
+    /**
      * something with softbreak
      * {.cls}
      */
@@ -478,14 +543,12 @@ module.exports = function (options) {
     }],
     transform: function transform(tokens, i, j) {
       var token = tokens[i].children[j];
-      var attrs = utils.getAttrs(token.content, 0, options); // find last closing tag
-
+      var attrs = utils.getAttrs(token.content, 0, options);
+      // find last closing tag
       var ii = i + 1;
-
       while (tokens[ii + 1] && tokens[ii + 1].nesting === -1) {
         ii++;
       }
-
       var openingToken = utils.getMatchingOpeningToken(tokens, ii);
       utils.addAttrs(attrs, openingToken);
       tokens[i].children = tokens[i].children.slice(0, -2);
@@ -543,33 +606,37 @@ module.exports = function (options) {
       var content = token.content;
       var attrs = utils.getAttrs(content, content.lastIndexOf(options.leftDelimiter), options);
       var ii = i + 1;
-
       while (tokens[ii + 1] && tokens[ii + 1].nesting === -1) {
         ii++;
       }
-
       var openingToken = utils.getMatchingOpeningToken(tokens, ii);
       utils.addAttrs(attrs, openingToken);
       var trimmed = content.slice(0, content.lastIndexOf(options.leftDelimiter));
       token.content = last(trimmed) !== ' ' ? trimmed : trimmed.slice(0, -1);
     }
   }];
-}; // get last element of array or string
+};
 
-
+// get last element of array or string
 function last(arr) {
   return arr.slice(-1)[0];
 }
 
 },{"./utils.js":3}],3:[function(require,module,exports){
 'use strict';
+
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+var attributeListDefintions = new Map();
+exports.attributeListDefintions = attributeListDefintions;
+
 /**
  * parse {.class #id key=val} strings
  * @param {string} str: string to parse
  * @param {int} start: where to start parsing (including {)
  * @returns {2d array}: [['key', 'val'], ['class', 'red']]
  */
-
 exports.getAttrs = function (str, start, options) {
   // not tab, line feed, form feed, space, solidus, greater than sign, quotation mark, apostrophe and equals sign
   var allowedKeyChars = /[^\t\n\f />"'=]/;
@@ -577,31 +644,36 @@ exports.getAttrs = function (str, start, options) {
   var keySeparator = '=';
   var classChar = '.';
   var idChar = '#';
+  var attributeListReferenceChar = ':';
   var attrs = [];
   var key = '';
   var value = '';
   var parsingKey = true;
-  var valueInsideQuotes = false; // read inside {}
+  var valueInsideQuotes = false;
+
+  // read inside {}
   // start + left delimiter length to avoid beginning {
   // breaks when } is found or end of string
-
   for (var i = start + options.leftDelimiter.length; i < str.length; i++) {
     if (str.slice(i, i + options.rightDelimiter.length) === options.rightDelimiter) {
       if (key !== '') {
-        attrs.push([key, value]);
+        if (attributeListDefintions.has(key) && value === '' && !['css-module', 'class', 'id'].includes(key)) {
+          attrs.push(['attributeListReference', key]);
+        } else {
+          attrs.push([key, value]);
+        }
       }
-
       break;
     }
+    var char_ = str.charAt(i);
 
-    var char_ = str.charAt(i); // switch to reading value if equal sign
-
+    // switch to reading value if equal sign
     if (char_ === keySeparator && parsingKey) {
       parsingKey = false;
       continue;
-    } // {.class} {..css-module}
+    }
 
-
+    // {.class} {..css-module}
     if (char_ === classChar && key === '') {
       if (str.charAt(i + 1) === classChar) {
         key = 'css-module';
@@ -609,95 +681,116 @@ exports.getAttrs = function (str, start, options) {
       } else {
         key = 'class';
       }
-
       parsingKey = false;
       continue;
-    } // {#id}
+    }
 
-
+    // {#id}
     if (char_ === idChar && key === '') {
       key = 'id';
       parsingKey = false;
       continue;
-    } // {value="inside quotes"}
+    }
 
-
+    // {value="inside quotes"}
     if (char_ === '"' && value === '') {
       valueInsideQuotes = true;
       continue;
     }
-
     if (char_ === '"' && valueInsideQuotes) {
       valueInsideQuotes = false;
       continue;
-    } // read next key/value pair
+    }
 
-
+    // read next key/value pair
     if (char_ === pairSeparator && !valueInsideQuotes) {
       if (key === '') {
         // beginning or ending space: { .red } vs {.red}
         continue;
       }
-
-      attrs.push([key, value]);
+      if (key.slice(-1) === attributeListReferenceChar) {
+        value = key.slice(0, -1);
+        key = 'attributeListDefinition';
+      }
+      if (value === '' && attributeListDefintions.has(key)) {
+        // attribute list definition import
+        var _iterator = _createForOfIteratorHelper(attributeListDefintions.get(key)),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var attr = _step.value;
+            if (attr[0] !== 'id') {
+              attrs.push(attr);
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+      } else {
+        attrs.push([key, value]);
+      }
       key = '';
       value = '';
       parsingKey = true;
       continue;
-    } // continue if character not allowed
+    }
 
-
+    // continue if character not allowed
     if (parsingKey && char_.search(allowedKeyChars) === -1) {
       continue;
-    } // no other conditions met; append to key/value
+    }
 
-
+    // no other conditions met; append to key/value
     if (parsingKey) {
       key += char_;
       continue;
     }
-
     value += char_;
   }
-
   if (options.allowedAttributes && options.allowedAttributes.length) {
     var allowedAttributes = options.allowedAttributes;
     return attrs.filter(function (attrPair) {
       var attr = attrPair[0];
-
       function isAllowedAttribute(allowedAttribute) {
         return attr === allowedAttribute || allowedAttribute instanceof RegExp && allowedAttribute.test(attr);
       }
-
       return allowedAttributes.some(isAllowedAttribute);
     });
   } else {
     return attrs;
   }
 };
+
 /**
  * add attributes from [['key', 'val']] list
  * @param {array} attrs: [['key', 'val']]
  * @param {token} token: which token to add attributes
  * @returns token
  */
-
-
 exports.addAttrs = function (attrs, token) {
   for (var j = 0, l = attrs.length; j < l; ++j) {
     var key = attrs[j][0];
-
     if (key === 'class') {
       token.attrJoin('class', attrs[j][1]);
     } else if (key === 'css-module') {
       token.attrJoin('css-module', attrs[j][1]);
-    } else {
+    } else if (key === 'attributeListReference') {
+      if (attributeListDefintions.has(attrs[j][1])) {
+        exports.addAttrs(attributeListDefintions.get(attrs[j][1]), token);
+      }
+    } else if (key === 'id') {
+      // marked-it fork
       token.attrPush(attrs[j]);
+    } else {
+      // marked-it fork
+      token.attrJoin(attrs[j][0], attrs[j][1]); // marked-it fork
     }
   }
-
   return token;
 };
+
 /**
  * Does string have properly formatted curly?
  *
@@ -709,57 +802,51 @@ exports.addAttrs = function (attrs, token) {
  * @param {string} where to expect {} curly. start, middle, end or only.
  * @return {function(string)} Function which testes if string has curly.
  */
-
-
 exports.hasDelimiters = function (where, options) {
   if (!where) {
     throw new Error('Parameter `where` not passed. Should be "start", "middle", "end" or "only".');
   }
+
   /**
    * @param {string} str
    * @return {boolean}
    */
-
-
   return function (str) {
     // we need minimum three chars, for example {b}
     var minCurlyLength = options.leftDelimiter.length + 1 + options.rightDelimiter.length;
-
     if (!str || typeof str !== 'string' || str.length < minCurlyLength) {
       return false;
     }
-
     function validCurlyLength(curly) {
       var isClass = curly.charAt(options.leftDelimiter.length) === '.';
       var isId = curly.charAt(options.leftDelimiter.length) === '#';
       return isClass || isId ? curly.length >= minCurlyLength + 1 : curly.length >= minCurlyLength;
     }
-
     var start, end, slice, nextChar;
     var rightDelimiterMinimumShift = minCurlyLength - options.rightDelimiter.length;
-
     switch (where) {
       case 'start':
         // first char should be {, } found in char 2 or more
         slice = str.slice(0, options.leftDelimiter.length);
         start = slice === options.leftDelimiter ? 0 : -1;
-        end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, rightDelimiterMinimumShift); // check if next character is not one of the delimiters
-
+        end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, rightDelimiterMinimumShift);
+        // check if next character is not one of the delimiters
         nextChar = str.charAt(end + options.rightDelimiter.length);
-
         if (nextChar && options.rightDelimiter.indexOf(nextChar) !== -1) {
           end = -1;
         }
-
         break;
-
       case 'end':
         // last char should be }
         start = str.lastIndexOf(options.leftDelimiter);
-        end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, start + rightDelimiterMinimumShift);
+        //end = start === -1 ? -1 : str.indexOf(options.rightDelimiter, start + rightDelimiterMinimumShift);
+        end = start === -1 ? -1 : str.lastIndexOf(options.rightDelimiter); // marked-it fork
         end = end === str.length - options.rightDelimiter.length ? end : -1;
+        // reject if there is a doubled closing delimiter (e.g. "{{attr}}" has "}}" at end)
+        if (end > 0 && str[end - options.rightDelimiter.length] === options.rightDelimiter[options.rightDelimiter.length - 1]) {
+          end = -1;
+        }
         break;
-
       case 'only':
         // '{.a}'
         slice = str.slice(0, options.leftDelimiter.length);
@@ -768,15 +855,13 @@ exports.hasDelimiters = function (where, options) {
         end = slice === options.rightDelimiter ? str.length - options.rightDelimiter.length : -1;
         break;
     }
-
     return start !== -1 && end !== -1 && validCurlyLength(str.substring(start, end + options.rightDelimiter.length));
   };
 };
+
 /**
  * Removes last curly from string.
  */
-
-
 exports.removeDelimiter = function (str, options) {
   var start = escapeRegExp(options.leftDelimiter);
   var end = escapeRegExp(options.rightDelimiter);
@@ -784,6 +869,7 @@ exports.removeDelimiter = function (str, options) {
   var pos = str.search(curly);
   return pos !== -1 ? str.slice(0, pos) : str;
 };
+
 /**
  * Escapes special characters in string s such that the string
  * can be used in `new RegExp`. For example "[" becomes "\\[".
@@ -791,41 +877,34 @@ exports.removeDelimiter = function (str, options) {
  * @param {string} s Regex string.
  * @return {string} Escaped string.
  */
-
-
 function escapeRegExp(s) {
   return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
-
 exports.escapeRegExp = escapeRegExp;
+
 /**
  * find corresponding opening block
  */
-
 exports.getMatchingOpeningToken = function (tokens, i) {
   if (tokens[i].type === 'softbreak') {
     return false;
-  } // non closing blocks, example img
-
-
+  }
+  // non closing blocks, example img
   if (tokens[i].nesting === 0) {
     return tokens[i];
   }
-
   var level = tokens[i].level;
   var type = tokens[i].type.replace('_close', '_open');
-
   for (; i >= 0; --i) {
     if (tokens[i].type === type && tokens[i].level === level) {
       return tokens[i];
     }
   }
 };
+
 /**
  * from https://github.com/markdown-it/markdown-it/blob/master/lib/common/utils.js
  */
-
-
 var HTML_ESCAPE_TEST_RE = /[&<>"]/;
 var HTML_ESCAPE_REPLACE_RE = /[&<>"]/g;
 var HTML_REPLACEMENTS = {
@@ -834,16 +913,13 @@ var HTML_REPLACEMENTS = {
   '>': '&gt;',
   '"': '&quot;'
 };
-
 function replaceUnsafeChar(ch) {
   return HTML_REPLACEMENTS[ch];
 }
-
 exports.escapeHtml = function (str) {
   if (HTML_ESCAPE_TEST_RE.test(str)) {
     return str.replace(HTML_ESCAPE_REPLACE_RE, replaceUnsafeChar);
   }
-
   return str;
 };
 

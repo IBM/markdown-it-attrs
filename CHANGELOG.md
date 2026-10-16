@@ -2,6 +2,9 @@
 
 This project uses [semantic versioning](http://semver.org/).
 
+## [4.0.0-10] 2026-10-16
+- updated dev dependencies (`shell-quote`, `pbkdf2`)
+
 ## [4.0.0-9] 2026-09-25
 - updated dev dependencies to resolve critical and high severity CVEs (upgraded eslint, mocha, nyc, markdown-it; removed coveralls)
 - fixed blockquote attribute targeting to correctly apply `{.c}` after `> quote` to `<blockquote>` rather than `<p>` (regression from markdown-it@15 tokenization change)
