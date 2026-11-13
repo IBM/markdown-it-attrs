@@ -546,7 +546,9 @@ module.exports = function (options) {
       var attrs = utils.getAttrs(token.content, 0, options);
       // find last closing tag
       var ii = i + 1;
-      while (tokens[ii + 1] && tokens[ii + 1].nesting === -1) {
+      // stop at a visible paragraph inside a list item, so that a loose list
+      // item's paragraph gets the attributes instead of the list item
+      while (tokens[ii + 1] && tokens[ii + 1].nesting === -1 && !(tokens[ii].type === 'paragraph_close' && !tokens[ii].hidden && tokens[ii + 1].type === 'list_item_close')) {
         ii++;
       }
       var openingToken = utils.getMatchingOpeningToken(tokens, ii);
@@ -753,6 +755,9 @@ exports.getAttrs = function (str, start, options) {
     var allowedAttributes = options.allowedAttributes;
     return attrs.filter(function (attrPair) {
       var attr = attrPair[0];
+      if (!isSafeUrlAttribute(attr, attrPair[1])) {
+        return false;
+      }
       function isAllowedAttribute(allowedAttribute) {
         return attr === allowedAttribute || allowedAttribute instanceof RegExp && allowedAttribute.test(attr);
       }
@@ -762,6 +767,33 @@ exports.getAttrs = function (str, start, options) {
     return attrs;
   }
 };
+
+// attributes whose value is a URL
+var urlAttributes = ['href', 'src', 'cite', 'poster', 'action', 'formaction', 'xlink:href', 'data', 'background', 'srcset'];
+// same schemes markdown-it's validateLink rejects (data: images are allowed)
+var badScheme = /^(vbscript|javascript|file|data):/;
+var goodDataScheme = /^data:image\/(gif|png|jpeg|webp);/;
+
+/**
+ * Reject URL-valued attributes with a dangerous scheme (e.g. javascript:).
+ * Whitespace and control characters are removed first, because browsers
+ * ignore them when parsing the URL scheme.
+ * @param {string} name: attribute name
+ * @param {string} value: attribute value
+ * @returns {boolean}: false if the value must not be rendered
+ */
+function isSafeUrlAttribute(name, value) {
+  if (urlAttributes.indexOf(String(name).toLowerCase()) === -1) {
+    return true;
+  }
+  // eslint-disable-next-line no-control-regex
+  var str = String(value).replace(/[\u0000-\u0020\u007f-\u009f]/g, '').toLowerCase();
+  // srcset holds a comma-separated list of URLs, so check each candidate
+  var candidates = String(name).toLowerCase() === 'srcset' ? str.split(',') : [str];
+  return candidates.every(function (c) {
+    return !badScheme.test(c) || goodDataScheme.test(c);
+  });
+}
 
 /**
  * add attributes from [['key', 'val']] list
@@ -783,6 +815,10 @@ exports.addAttrs = function (attrs, token) {
     } else if (key === 'id') {
       // marked-it fork
       token.attrPush(attrs[j]);
+    } else if (urlAttributes.indexOf(key.toLowerCase()) !== -1) {
+      // URL values must replace, not be joined (joining yields ' value' and
+      // can merge an attacker value into an existing empty href)
+      token.attrSet(key, attrs[j][1]);
     } else {
       // marked-it fork
       token.attrJoin(attrs[j][0], attrs[j][1]); // marked-it fork
