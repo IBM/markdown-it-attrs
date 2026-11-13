@@ -130,6 +130,8 @@ Output:
 <p id="red" class="green" regex="allowed">text</p>
 ```
 
+`allowedAttributes` filters by attribute name, and also drops `javascript:`, `vbscript:`, `file:` and non-image `data:` values from URL attributes such as `href` and `src`. It is not a full sanitizer, so also sanitize the rendered HTML when handling untrusted markdown.
+
 ## Ambiguity
 When class can be applied to both inline or block element, inline element will take precedence:
 ```md

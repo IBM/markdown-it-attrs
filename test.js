@@ -31,6 +31,58 @@ describe('markdown-it-attrs', () => {
     expected = '<p class="someclass" attr="allowed">text</p>\n';
     assert.equal(md.render(src), expected);
   });
+
+  [
+    { name: 'node build', plugin: attrs },
+    { name: 'browser build', plugin: require('./markdown-it-attrs.browser.js') }
+  ].forEach(({ name, plugin }) => describe('allowedAttributes URL scheme validation (' + name + ')', () => {
+    const allowed = { allowedAttributes: ['id', 'class', 'href', 'src', 'srcset'] };
+
+    function render(text, opts) {
+      return Md({ html: false }).use(plugin, opts || allowed).render(text);
+    }
+
+    [
+      { md: '[x](){href="javascript:alert(1)"}', expected: '<p><a href="">x</a></p>\n' },
+      { md: '[x](){href="JaVaScRiPt:alert(1)"}', expected: '<p><a href="">x</a></p>\n' },
+      { md: '[x](){href="  javascript:alert(1)"}', expected: '<p><a href="">x</a></p>\n' },
+      { md: '[x](){href="java&#9;script:alert(1)"}', expected: '<p><a href="">x</a>{href=&quot;java\tscript:alert(1)&quot;}</p>\n' },
+      { md: '[x](){href="vbscript:alert(1)"}', expected: '<p><a href="">x</a></p>\n' },
+      { md: '[x](){href="data:text/html,<b>x</b>"}', expected: '<p><a href="">x</a></p>\n' },
+      { md: '[x](<>){href=javascript:alert(1)}', expected: '<p><a href="">x</a></p>\n' },
+      { md: '[x][r]\n\n[r]: <>\n{href=javascript:alert(1)}', expected: '<p><a href="">x</a></p>\n<p></p>\n' },
+      { md: '[x][r]{href=javascript:alert(1)}\n\n[r]: <>', expected: '<p><a href="">x</a></p>\n' },
+      { md: '![x](){src="javascript:alert(1)"}', expected: '<p><img src="" alt="x"></p>\n' },
+      { md: '![x](){srcset="javascript:alert(1) 1x"}', expected: '<p><img src="" alt="x"></p>\n' },
+      { md: '![x](){srcset="a.png 1x, javascript:alert(1) 2x"}', expected: '<p><img src="" alt="x"></p>\n' }
+    ].forEach(({ md: inputMd, expected: expectedOutput }) => {
+      it('should drop dangerous URL value for ' + JSON.stringify(inputMd), () => {
+        const out = render(inputMd);
+        assert.equal(out, expectedOutput);
+      });
+    });
+
+    it('should drop dangerous value from attribute list reference', () => {
+      const out = render('{ald: href=javascript:alert(1)}\n\n[x](){ald}');
+      assert.ok(!/javascript:/i.test(out), out);
+    });
+
+    it('should still allow safe href values', () => {
+      assert.equal(render('[x](){href="https://example.com/a"}'),
+        '<p><a href="https://example.com/a">x</a></p>\n');
+      assert.equal(render('[x](){href="/rel/path"}'),
+        '<p><a href="/rel/path">x</a></p>\n');
+    });
+
+    it('should still allow safe srcset values', () => {
+      assert.equal(render('![x](){srcset="a.png 1x, b.png 2x"}', { allowedAttributes: ['srcset'] }),
+        '<p><img src="" alt="x" srcset="a.png 1x, b.png 2x"></p>\n');
+    });
+
+    it('should still strip non-whitelisted attributes', () => {
+      assert.equal(render('[x](){onclick="alert(1)"}'), '<p><a href="">x</a></p>\n');
+    });
+  }));
 });
 
 function describeTestsWithOptions(options, postText) {
